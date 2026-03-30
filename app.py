@@ -398,31 +398,53 @@ def render_live_session_page():
     shot_in_round = shot["shot_in_round"]
     total_shot_no = idx + 1
 
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Round", f"{round_no} of 6")
-    c2.metric("Shot", f"{shot_in_round} of 8")
-    c3.metric("Total", f"{total_shot_no} of 48")
+    st.markdown(f"### Round {round_no} of 6")
+    st.caption(f"Shot {shot_in_round} of 8 • Total {total_shot_no} of 48")
 
     st.markdown("---")
-    st.markdown(f"## Club: {shot['club_name']} {shot['club_type']}")
+    st.markdown(f"## {shot['club_name']} {shot['club_type']}")
     st.markdown(f"### Target: {shot['target_type']}")
 
     if "shot_choice" not in st.session_state:
         st.session_state.shot_choice = None
 
+    st.markdown(
+        """
+        <style>
+        div[data-testid="stButton"] > button {
+            min-height: 72px;
+            font-size: 1.25rem;
+            font-weight: 700;
+            border-radius: 14px;
+        }
+        div[data-testid="column"]:nth-of-type(1) div[data-testid="stButton"] > button {
+            background: #16a34a !important;
+            color: white !important;
+            border: 1px solid #16a34a !important;
+        }
+        div[data-testid="column"]:nth-of-type(2) div[data-testid="stButton"] > button {
+            background: #dc2626 !important;
+            color: white !important;
+            border: 1px solid #dc2626 !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
     col1, col2 = st.columns(2)
     with col1:
-        if st.button("🟢 HIT", use_container_width=True, type="primary"):
+        if st.button("HIT", use_container_width=True, key="hit_btn"):
             st.session_state.shot_choice = "HIT"
     with col2:
-        if st.button("🔴 MISS", use_container_width=True):
+        if st.button("MISS", use_container_width=True, key="miss_btn"):
             st.session_state.shot_choice = "MISS"
 
     current_choice = st.session_state.get("shot_choice")
     if current_choice:
         st.write(f"**Selected:** {current_choice}")
 
-    if st.button("NEXT SHOT", use_container_width=True):
+    if st.button("NEXT SHOT", use_container_width=True, type="primary"):
         if current_choice not in ["HIT", "MISS"]:
             st.error("Select HIT or MISS first.")
         else:
