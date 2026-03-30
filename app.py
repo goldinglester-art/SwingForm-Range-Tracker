@@ -566,29 +566,33 @@ def render_tracking_page():
     elif graph_choice == "Total Score Over Time":
         st.line_chart(chart_df.set_index("label")["total_score"])
 
-    elif graph_choice == "Club Accuracy Over Time":
-        if not shots_df.empty:
-            valid_ids = set(filt["session_id"].astype(str).tolist())
-        shots_f = shots_df[shots_df["session_id"].astype(str).isin(valid_ids)].copy()
-            valid_ids = set(filt["session_id"].astype(str).tolist())
-            shots_f2 = shots_df[shots_df["session_id"].astype(str).isin(valid_ids)].copy()
-            if current_player:
-                shots_f2 = shots_f2[shots_f2["player_name"].astype(str).str.strip() == current_player]
-            shots_f2["club"] = shots_f2["club_name"].astype(str) + " " + shots_f2["club_type"].astype(str)
+elif graph_choice == "Club Accuracy Over Time":
+    if not shots_df.empty:
+        valid_ids = set(filt["session_id"].astype(str).tolist())
+        shots_f2 = shots_df[shots_df["session_id"].astype(str).isin(valid_ids)].copy()
 
-            club_options = sorted(shots_f2["club"].dropna().unique().tolist())
-            if club_options:
-                selected_club = st.selectbox("Select Club", club_options, index=0)
-                club_chart = shots_f2[shots_f2["club"] == selected_club].copy()
-                club_chart = club_chart.groupby("session_date", as_index=False).agg(
-                    hits=("score", "sum"),
-                    attempts=("score", "count")
-                )
-                club_chart["accuracy"] = ((club_chart["hits"] / club_chart["attempts"]) * 100).round(1)
-                club_chart["label"] = pd.to_datetime(club_chart["session_date"], errors="coerce").dt.strftime("%Y-%m-%d")
-                st.line_chart(club_chart.set_index("label")["accuracy"])
-            else:
-                st.info("No club data available.")
+        if current_player:
+            shots_f2 = shots_f2[shots_f2["player_name"].astype(str).str.strip() == current_player]
+
+        shots_f2["club"] = shots_f2["club_name"].astype(str) + " " + shots_f2["club_type"].astype(str)
+
+        club_options = sorted(shots_f2["club"].dropna().unique().tolist())
+
+        if club_options:
+            selected_club = st.selectbox("Select Club", club_options, index=0)
+
+            club_chart = shots_f2[shots_f2["club"] == selected_club].copy()
+            club_chart = club_chart.groupby("session_date", as_index=False).agg(
+                hits=("score", "sum"),
+                attempts=("score", "count")
+            )
+
+            club_chart["accuracy"] = ((club_chart["hits"] / club_chart["attempts"]) * 100).round(1)
+            club_chart["label"] = pd.to_datetime(club_chart["session_date"], errors="coerce").dt.strftime("%Y-%m-%d")
+
+            st.line_chart(club_chart.set_index("label")["accuracy"])
+        else:
+            st.info("No club data available.")
 
     if not shots_df.empty:
         shots_df["session_date"] = pd.to_datetime(shots_df["session_date"], errors="coerce")
