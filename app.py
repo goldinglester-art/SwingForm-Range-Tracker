@@ -498,6 +498,9 @@ def render_summary_page():
 
 def render_tracking_page():
     st.subheader("Tracking")
+    current_player = str(load_settings().get("player_name", "")).strip()
+    if current_player:
+        st.caption(f"Showing data for: {current_player}")
 
     sessions_df = load_sessions_df()
     shots_df = load_shots_df()
@@ -521,9 +524,6 @@ def render_tracking_page():
         range_filter = st.selectbox("Range Name", range_options, index=0)
 
     filt = sessions_df.copy()
-    filt = filt[(filt["session_date"].dt.date >= date_from) & (filt["session_date"].dt.date <= date_to)]
-    if range_filter != "All":
-        filt = filt[filt["range_name"] == range_filter]
 
     if filt.empty:
         st.info("No sessions in selected filters.")
@@ -568,8 +568,12 @@ def render_tracking_page():
 
     elif graph_choice == "Club Accuracy Over Time":
         if not shots_df.empty:
+        valid_ids = set(filt["session_id"].astype(str).tolist())
+        shots_f = shots_df[shots_df["session_id"].astype(str).isin(valid_ids)].copy()
             valid_ids = set(filt["session_id"].astype(str).tolist())
             shots_f2 = shots_df[shots_df["session_id"].astype(str).isin(valid_ids)].copy()
+            if current_player:
+                shots_f2 = shots_f2[shots_f2["player_name"].astype(str).str.strip() == current_player]
             shots_f2["club"] = shots_f2["club_name"].astype(str) + " " + shots_f2["club_type"].astype(str)
 
             club_options = sorted(shots_f2["club"].dropna().unique().tolist())
