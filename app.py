@@ -568,7 +568,7 @@ def render_tracking_page():
 
     elif graph_choice == "Club Accuracy Over Time":
         if not shots_df.empty:
-        valid_ids = set(filt["session_id"].astype(str).tolist())
+            valid_ids = set(filt["session_id"].astype(str).tolist())
         shots_f = shots_df[shots_df["session_id"].astype(str).isin(valid_ids)].copy()
             valid_ids = set(filt["session_id"].astype(str).tolist())
             shots_f2 = shots_df[shots_df["session_id"].astype(str).isin(valid_ids)].copy()
