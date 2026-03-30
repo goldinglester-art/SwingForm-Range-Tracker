@@ -274,9 +274,11 @@ def make_round_summary(results_df):
 
 
 def require_login():
-    if not st.user.is_logged_in:
+    is_logged_in = getattr(st.user, "is_logged_in", False)
+    if not is_logged_in:
         st.title(APP_TITLE)
         st.subheader("Please log in.")
+        st.info("Login will work after auth secrets are configured in Streamlit Cloud.")
         st.button("Log in with Google", on_click=st.login)
         st.stop()
 
