@@ -168,6 +168,7 @@ def record_shot(choice):
         "session_date": sess["session_date"],
         "range_name": sess["range_name"],
         "player_name": sess["player_name"],
+        "owner_email": current_user_email(),
         "round_no": shot["round_no"],
         "shot_in_round": shot["shot_in_round"],
         "total_shot_no": idx + 1,
@@ -222,6 +223,7 @@ def save_active_session_to_files():
         "session_date": sess["session_date"],
         "range_name": sess["range_name"],
         "player_name": sess["player_name"],
+        "owner_email": current_user_email(),
         "start_time": sess["start_time"],
         "finish_time": sess["finish_time"],
         "duration_minutes": duration_minutes,
@@ -269,6 +271,21 @@ def make_round_summary(results_df):
     grp["accuracy_%"] = grp["accuracy_num"].map(lambda x: f"{x:.1f}%")
     return grp[["round_no", "hits", "misses", "round_score", "accuracy_%"]]
 
+
+
+def require_login():
+    if not st.user.is_logged_in:
+        st.title(APP_TITLE)
+        st.subheader("Please log in.")
+        st.button("Log in with Google", on_click=st.login)
+        st.stop()
+
+
+def current_user_email():
+    try:
+        return str(st.user.get("email", "")).strip().lower()
+    except Exception:
+        return ""
 
 
 def render_header():
@@ -545,7 +562,10 @@ def render_tracking_page():
         range_options = ["All"] + sorted([x for x in sessions_df["range_name"].dropna().astype(str).unique().tolist() if x.strip()])
         range_filter = st.selectbox("Range Name", range_options, index=0)
 
+    owner_email = current_user_email()
     filt = sessions_df.copy()
+    if "owner_email" in filt.columns:
+        filt = filt[filt["owner_email"].astype(str).str.strip().str.lower() == owner_email]
 
     if filt.empty:
         st.info("No sessions in selected filters.")
@@ -592,9 +612,8 @@ def render_tracking_page():
         if not shots_df.empty:
             valid_ids = set(filt["session_id"].astype(str).tolist())
             shots_f2 = shots_df[shots_df["session_id"].astype(str).isin(valid_ids)].copy()
-
-            if current_player:
-                shots_f2 = shots_f2[shots_f2["player_name"].astype(str).str.strip() == current_player]
+            if "owner_email" in shots_f2.columns:
+                shots_f2 = shots_f2[shots_f2["owner_email"].astype(str).str.strip().str.lower() == owner_email]
 
             shots_f2["club"] = shots_f2["club_name"].astype(str) + " " + shots_f2["club_type"].astype(str)
 
@@ -620,6 +639,8 @@ def render_tracking_page():
         shots_df["session_date"] = pd.to_datetime(shots_df["session_date"], errors="coerce")
         valid_ids = set(filt["session_id"].astype(str).tolist())
         shots_f = shots_df[shots_df["session_id"].astype(str).isin(valid_ids)].copy()
+        if "owner_email" in shots_f.columns:
+            shots_f = shots_f[shots_f["owner_email"].astype(str).str.strip().str.lower() == owner_email]
 
         if not shots_f.empty:
             st.markdown("### Club Performance")
@@ -669,6 +690,7 @@ def main():
     ensure_csv_files()
     settings = load_settings()
     render_header()
+    require_login()
 
     pages = ["Setup", "Start Session", "Live Session", "Summary", "Tracking"]
     default_index = pages.index(st.session_state.get("go_page", "Setup")) if st.session_state.get("go_page", "Setup") in pages else 0
@@ -679,6 +701,9 @@ def main():
     )
     st.session_state["go_page"] = page
 
+    st.sidebar.markdown("---")
+    st.sidebar.caption(f"Signed in as: {current_user_email()}")
+    st.sidebar.button("Log out", on_click=st.logout, use_container_width=True)
     st.sidebar.markdown("---")
     sess = get_active_session()
     if sess and not session_finished():
